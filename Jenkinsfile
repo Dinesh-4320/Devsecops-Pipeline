@@ -14,6 +14,15 @@ pipeline{
       }
     }
     
+    stage ('check-git-secrets'){
+      steps{
+        sh '''
+              rm trufflehog || true
+              docker run gesellix/trufflehog --json https://github.com/Dinesh-4320/Devsecops-Pipeline.git
+              cat trufflehog
+      }
+    }
+    
     stage ('Build') {
       steps{
         sh 'mvn clean package'
