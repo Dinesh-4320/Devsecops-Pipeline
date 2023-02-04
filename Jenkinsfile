@@ -30,7 +30,7 @@ pipeline{
               rm owasp* || true
 	      wget https://raw.githubusercontent.com/Dinesh-4320/Devsecops-Pipeline/master/owasp-dependency-check.sh
 	      chmod +x owasp-dependency-check.sh
-	      ./owasp-dependency-check.sh
+	      bash owasp-dependency-check.sh
 	    ''' 	
 	}
      } 
