@@ -1,51 +1,33 @@
-pipeline{
-  agent any
-  tools{
-    maven 'Maven'
-  }
-  
-  stages{
-    stage ('initialize') {
-      steps{
-        sh '''
-                  echo "PATH=${PATH}"
-                   echo "M2_HOME=${M2_HOME}"
-           '''
-      }
-    }
-    
-    stage ('check-git-secrets'){
-      steps{
-        sh '''
-              rm trufflehog || true
-              docker run gesellix/trufflehog --json https://github.com/Dinesh-4320/Devsecops-Pipeline.git > trufflehog
-              cat trufflehog
-           '''
-      }
-    }
-   
-    stage('Source Composition Analysis'){
-	steps{
-	 sh ''' 
-              rm owasp* || true
-	      wget https://raw.githubusercontent.com/Dinesh-4320/Devsecops-Pipeline/master/owasp-dependency-check.sh
-	      chmod +x owasp-dependency-check.sh
-	      bash owasp-dependency-check.sh
-	    ''' 	
-	}
-     } 
-    stage ('Build') {
-      steps{
-        sh 'mvn clean package'
-      }
-    }
-    
-    stage('Deploy-to-Tomcat'){
-      steps{
-        sshagent(['tomcat']){
-        sh 'scp -o StrictHostKeyChecking=no target/*.war ubuntu@3.111.37.87:/home/ubuntu/prod/apache-tomcat-11.0.0-M1/webapps/webapp.war' 
-       }
-    }
-    }
-}
-}
+#!/bin/sh
+
+DC_VERSION="latest"
+DC_DIRECTORY=$HOME/OWASP-Dependency-Check
+DC_PROJECT="dependency-check scan: $(pwd)"
+DATA_DIRECTORY="$DC_DIRECTORY/data"
+CACHE_DIRECTORY="$DC_DIRECTORY/data/cache"
+
+if [ ! -d "$DATA_DIRECTORY" ]; then
+    echo "Initially creating persistent directory: $DATA_DIRECTORY"
+    mkdir -p "$DATA_DIRECTORY"
+fi
+if [ ! -d "$CACHE_DIRECTORY" ]; then
+    echo "Initially creating persistent directory: $CACHE_DIRECTORY"
+    mkdir -p "$CACHE_DIRECTORY"
+fi
+
+# Make sure we are using the latest version
+docker pull owasp/dependency-check:$DC_VERSION
+
+docker run --rm \
+    -e user=$USER \
+    -u $(id -u ${USER}):$(id -g ${USER}) \
+    --volume $(pwd):/src:z \
+    --volume "$DATA_DIRECTORY":/usr/share/dependency-check/data:z \
+    --volume $(pwd)/odc-reports:/report:z \
+    owasp/dependency-check:$DC_VERSION \
+    --scan /src \
+    --format "ALL" \
+    --project "$DC_PROJECT" \
+    --out /report
+    # Use suppression like this: (where /src == $pwd)
+    # --suppression "/src/security/dependency-check-suppression.xml"
