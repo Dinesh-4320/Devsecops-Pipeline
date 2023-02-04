@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>Devsecops Pipleline integrated Application</title>
+    <title>Devsecops integrated Application</title>
 
 
     <!-- Custom styles for this template -->
